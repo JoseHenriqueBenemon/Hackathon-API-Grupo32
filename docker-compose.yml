@@ -1,26 +1,28 @@
 services:
-  montorae-api:
-    image: mentorae-api
-    env_file:
-      - .env
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-    ports:
-      - "3010:3010"
-    depends_on:
-      - db
-    
   db:
-    image: postgres:17
+    image: postgres:15
+    container_name: postgres_container
+    restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: hackathon
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
 
-volumes:
-  pgdata:
+  app:
+    build: .
+    container_name: my_app
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    ports:
+      - "3010:3010"
+    command: ["npm", "run", "dev"]
