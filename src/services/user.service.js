@@ -170,7 +170,7 @@ module.exports = {
       if (!isValid) return res.status(401).send('Email ou senha inválida, tente novamente!');
 
       const token = jwt.sign({ user_id: user.user_id, user_type: user.user_type }, env.JWT_SECRET, { expiresIn: '1d' });
-      res.json({ token });
+      res.json({ token, user_type: user.user_type, user_id: user.user_id });
     } catch (err) {
       res.status(500).send(err.message);
     }
