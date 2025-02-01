@@ -9,13 +9,13 @@ const teacherRepository = AppDataSource.getRepository(Teacher);
 
 module.exports = {
     async getAllTeachers() {
-      return teacherRepository.find({ relations: ['user_account'] });
+      return teacherRepository.find({ relations: ['user_account', 'mentoring'] });
     },
     async getAllStudents() {
       return studentRepository.find({ relations: ['user_account'] });
     },
     async getTeacherById(id) {
-      return teacherRepository.findOne({ where: { teacher_id: id }, relations: ['user_account'] });
+      return teacherRepository.findOne({ where: { teacher_id: id }, relations: ['user_account', 'mentoring'] });
     },
     async getStudentById(id) {
       return studentRepository.findOne({ where: { student_id: id }, relations: ['user_account'] });

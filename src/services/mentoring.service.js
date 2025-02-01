@@ -6,14 +6,17 @@ module.exports = {
   async getMentoring(_, res) {
     try {
       const mentoring = await mentoringRepository.getAllMentoring();
-      res.json(mentoring);
+      res.status(200).json(mentoring);
     } catch (err) {
       res.status(400).send(err.errors || err.message);
     }
   },
-  async getMentoringById(_, res) {
+  async getMentoringById(req, res) {
     try {
-        return res.status(204).json();
+      const { id } = req.params;
+      const mentoring = await mentoringRepository.getMentoringById(id);
+      if (!mentoring) return res.status(404).send('Mentoria não encontrada!');
+      res.status(200).json(mentoring);
     } catch (err) {
       res.status(400).send(err.errors || err.message);
     }
@@ -21,9 +24,9 @@ module.exports = {
   async createMentoring(req, res) {
     try {
         const mentoringData = mentoringSchema.parse(req.body);
+        mentoringData.teacher_id = mentoringData.teacher_id || req.user.user_id;
 
         const teacher = await userRepository.getTeacherById(mentoringData.teacher_id);
-
         if(!teacher) return res.status(404).send("Este usuário não é um professor, tente novamente!");
         
         const mentoring = await mentoringRepository.createMentoring(mentoringData);

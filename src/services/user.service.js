@@ -8,7 +8,7 @@ module.exports = {
   async getTeachers(_, res) {
     try {
       const teachers = await userRepository.getAllTeachers();
-      res.json(teachers);
+      res.status(200).json(teachers);
     } catch (err) {
       res.status(500).send(err.message);
     }
@@ -16,7 +16,7 @@ module.exports = {
   async getStudents(_, res) {
     try {
       const students = await userRepository.getAllStudents();
-      res.json(students);
+      res.status(200).json(students);
     } catch (err) {
       res.status(500).send(err.message);
     }
@@ -26,7 +26,7 @@ module.exports = {
       const { id } = req.params;
       const teacher = await userRepository.getTeacherById(id);
       if (!teacher) return res.status(404).send('Professor não encontrado!');
-      res.json(teacher);
+      res.status(200).json(teacher);
     } catch (err) {
       res.status(500).send(err.message);
     }
@@ -36,7 +36,7 @@ module.exports = {
       const { id } = req.params;
       const student = await userRepository.getStudentById(id);
       if (!student) return res.status(404).send('Estudante não encontrado!');
-      res.json(student);
+      res.status(200).json(student);
     } catch (err) {
       res.status(500).send(err.message);
     }
@@ -170,7 +170,7 @@ module.exports = {
       if (!isValid) return res.status(401).send('Email ou senha inválida, tente novamente!');
 
       const token = jwt.sign({ user_id: user.user_id, user_type: user.user_type }, env.JWT_SECRET, { expiresIn: '1d' });
-      res.json({ token, user_type: user.user_type, user_id: user.user_id });
+      res.status(200).json({ token, user_type: user.user_type, user_id: user.user_id });
     } catch (err) {
       res.status(500).send(err.message);
     }

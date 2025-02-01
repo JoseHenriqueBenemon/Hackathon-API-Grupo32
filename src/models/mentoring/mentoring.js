@@ -10,10 +10,10 @@ module.exports = new EntitySchema({
             generated: 'increment' 
         },
         teacher_id: {
-            type: 'int',
+            type: "int"
         },
         mentoring_date: {
-            type:  'timestamp',
+            type: 'timestamp',
         },
         modality: {
             type: 'varchar',
@@ -28,7 +28,7 @@ module.exports = new EntitySchema({
         teacher: {
             target: 'Teacher',
             type: 'many-to-one',
-            JoinColumn: {
+            joinColumn: {
                 name: 'teacher_id',
                 referencedColumnName: "teacher_id"
             }

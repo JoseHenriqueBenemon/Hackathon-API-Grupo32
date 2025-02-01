@@ -35,5 +35,10 @@ module.exports = new EntitySchema({
         referencedColumnName: 'user_id',
       },
     },
+    mentoring: {
+      target: 'Mentoring',
+      type: 'one-to-many',
+      inverseSide: 'teacher',
+    }
   },
 });
