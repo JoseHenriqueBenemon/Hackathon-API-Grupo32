@@ -1,8 +1,9 @@
 const { DataSource } = require('typeorm');
 const { env } = require('./env.config');
-const UserAccount = require('../models/userAccount');
-const Student = require('../models/student');
-const Teacher = require('../models/teacher');
+const UserAccount = require('../models/user/userAccount');
+const Student = require('../models/user/student');
+const Teacher = require('../models/user/teacher');
+const Mentoring = require('../models/mentoring/mentoring');
 
 const AppDataSource = new DataSource({
   type: 'postgres',
@@ -13,7 +14,7 @@ const AppDataSource = new DataSource({
   database: env.DB_NAME,
   synchronize: true,
   logging: false,
-  entities: [UserAccount, Student, Teacher],
+  entities: [UserAccount, Student, Teacher, Mentoring],
 });
 
 module.exports = AppDataSource;

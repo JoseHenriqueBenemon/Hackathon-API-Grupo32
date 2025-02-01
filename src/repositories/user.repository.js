@@ -1,7 +1,7 @@
 const AppDataSource = require('../config/database');
-const UserAccount = require('../models/userAccount');
-const Student = require('../models/student');
-const Teacher = require('../models/teacher');
+const UserAccount = require('../models/user/userAccount');
+const Student = require('../models/user/student');
+const Teacher = require('../models/user/teacher');
 
 const userRepository = AppDataSource.getRepository(UserAccount);
 const studentRepository = AppDataSource.getRepository(Student);

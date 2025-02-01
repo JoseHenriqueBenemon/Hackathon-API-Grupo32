@@ -13,7 +13,6 @@ const teacherSchema = userSchema.extend({
   bio: z.string(),
 });
 
-// Esquema para Student
 const studentSchema = userSchema;
 
-module.exports = { userSchema, teacherSchema, studentSchema };
+module.exports = { teacherSchema, studentSchema };

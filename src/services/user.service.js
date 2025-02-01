@@ -1,7 +1,7 @@
 const userRepository = require('../repositories/user.repository');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { userSchema, teacherSchema, studentSchema } = require('../validations/user.validation');
+const { teacherSchema, studentSchema } = require('../validations/user.validation');
 const { env } = require('../config/env.config');
 
 module.exports = {
