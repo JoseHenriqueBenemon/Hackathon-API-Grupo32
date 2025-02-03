@@ -45,6 +45,8 @@ module.exports = {
     try {
       const teacherData = teacherSchema.parse(req.body);
 
+      if (teacherData.is_mentored && (!teacherData.bio || teacherData.bio.trim().length < 1)) return res.status(400).send("Se você é mentorado, precisa preencher a bio!"); 
+
       const hashedPassword = await bcrypt.hash(teacherData.password, 10);
       const user = await userRepository.createUser({
         ...teacherData,
@@ -73,8 +75,7 @@ module.exports = {
           password: hashedPassword,
           user_type: 'Student',
         });
-    
-        // Usa o user_id gerado para criar o registro na tabela student
+        
         await userRepository.createStudent({
           student_id: user.user_id,
         });
@@ -88,46 +89,62 @@ module.exports = {
     try {
       const { id } = req.params;
   
-      const teacher = await userRepository.getTeacherById(id);
+      const [teacher] = await userRepository.getTeacherById(id);
       if (!teacher) {
         return res.status(404).send("Professor não encontrado ou o ID não pertence a um professor!");
       }
   
       const teacherData = teacherSchema.partial().parse(req.body);
-  
+      const { is_mentored: newIsMentoredValue, bio: newBio } = teacherData;
+
       if (teacherData.password) {
         teacherData.password = await bcrypt.hash(teacherData.password, 10);
       }
-  
-      const userUpdateData = {
-        name: teacherData.name,
-        email: teacherData.email,
-        password: teacherData.password,
-      };
-  
-      const filteredUserUpdateData = Object.fromEntries(
-        Object.entries(userUpdateData).filter(([_, value]) => value !== undefined)
-      );
-      
-      if (Object.keys(filteredUserUpdateData).length > 0) {
-        await userRepository.updateUser(id, filteredUserUpdateData);
+
+      const resultingIsMentored = newIsMentoredValue !== undefined 
+        ? newIsMentoredValue 
+        : teacher.is_mentored;
+
+      if (resultingIsMentored) {
+        const resultingBio = newBio !== undefined 
+          ? newBio 
+          : teacher.bio;
+          
+        if (!resultingBio || resultingBio.trim().length < 1) {
+          return res.status(400).send("Se você é um mentor, precisa preencher a bio!");
+        }
       }
-  
-      const teacherUpdateData = {
-        personal_id: teacherData.personal_id,
-        phone: teacherData.phone,
-        is_mentored: teacherData.is_mentored,
-        bio: teacherData.bio,
-      };
-  
-      const filteredTeacherUpdateData = Object.fromEntries(
-        Object.entries(teacherUpdateData).filter(([_, value]) => value !== undefined)
-      );
-  
-      if (Object.keys(filteredTeacherUpdateData).length > 0) {
-        await userRepository.updateTeacher(id, filteredTeacherUpdateData);
+
+      const isBecomingUnmentored = teacher.is_mentored && resultingIsMentored === false;
+      if (isBecomingUnmentored && teacher.mentoring?.length > 0) {
+        return res.status(409).send("Você não pode deixar de ser um mentor pois tem mentorias em aberto!");
       }
-  
+
+      const userUpdateData = Object.fromEntries(
+        Object.entries({
+          name: teacherData.name,
+          email: teacherData.email,
+          password: teacherData.password,
+        }).filter(([_, value]) => value !== undefined)
+      );
+
+      if (Object.keys(userUpdateData).length > 0) {
+        await userRepository.updateUser(id, userUpdateData);
+      }
+
+      const teacherUpdateData = Object.fromEntries(
+        Object.entries({
+          personal_id: teacherData.personal_id,
+          phone: teacherData.phone,
+          is_mentored: teacherData.is_mentored,
+          bio: teacherData.bio,
+        }).filter(([_, value]) => value !== undefined)
+      );
+
+      if (Object.keys(teacherUpdateData).length > 0) {
+        await userRepository.updateTeacher(id, teacherUpdateData);
+      }
+
       res.status(200).send("Professor atualizado com sucesso!");
     } catch (err) {
       res.status(400).send(err.errors || err.message);

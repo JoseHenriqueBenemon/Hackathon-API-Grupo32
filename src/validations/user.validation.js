@@ -10,7 +10,7 @@ const teacherSchema = userSchema.extend({
   personal_id: z.string().min(11).max(14),
   phone: z.string().min(10).max(20),
   is_mentored: z.boolean().optional(),
-  bio: z.string(),
+  bio: z.string().optional(),
 });
 
 const studentSchema = userSchema;

@@ -24,6 +24,7 @@ module.exports = new EntitySchema({
     },
     bio: {
       type: 'text',
+      nullable: true
     },
   },
   relations: {

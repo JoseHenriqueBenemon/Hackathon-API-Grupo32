@@ -5,7 +5,12 @@ const { env } = require("./src/config/env.config")
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: (_, cb) => {
+    cb(null, true);
+  },
+  credentials: true,
+}));
 
 const userRoutes = require('./src/routes/user.routes');
 const mentoringRoutes = require('./src/routes/mentoring.routes');

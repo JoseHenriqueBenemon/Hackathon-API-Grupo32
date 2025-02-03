@@ -36,32 +36,102 @@ module.exports = {
       res.status(400).send(err.errors || err.message);
     }
   },
-  async updateMentoring(_, res) {
+  async updateMentoring(req, res) {
     try {
-        return res.status(204).json();
+      const { id } = req.params;
+
+      const mentoring = await mentoringRepository.getMentoringById(id);
+      if (!mentoring) return res.status(404).send("Mentoria não encontrada!");
+
+      const mentoringData = mentoringSchema.partial().parse(req.body);
+
+      await mentoringRepository.updateMentoring(id, mentoringData);
+      res.status(200).send("Mentoria alterada com sucesso!");
     } catch (err) {
       res.status(400).send(err.errors || err.message);
     }
   },
-  async deleteMentoring(_, res) {
+  async deleteMentoring(req, res) {
     try {
-        return res.status(204).json();
+      const { id } = req.params;
+
+      const mentoring = await mentoringRepository.getMentoringById(id);
+      if (!mentoring) return res.status(404).send("Mentoria não encontrada!");
+
+      await mentoringRepository.deleteMentoring(id);
+      res.status(200).send("Mentoria deletada com sucesso!");
     } catch (err) {
       res.status(400).send(err.errors || err.message);
     }
   },
-  async addLikeMentoring(_, res) {
+  async addLikeMentoring(req, res) {
     try {
-        return res.status(204).json();
+      const { id } = req.params;
+      const user_id = req.user.user_id;
+
+      const mentoring = await mentoringRepository.getMentoringById(id);
+      if (!mentoring) return res.status(404).send("Mentoria não encontrada!");
+
+      const student = await userRepository.getStudentById(user_id);
+      if (!student) return res.status(403).send("O usuário logado não é um aluno!");
+
+      const likesData = {
+        mentoring_id: id,
+        student_id: user_id
+      };
+
+      const existingLike = await mentoringRepository.verifyLikeMentoring(likesData);
+
+      if (existingLike) {
+          return res.status(400).send("Você já curtiu essa mentoria!");
+      }
+
+      await mentoringRepository.addLikeMentoring(likesData);
+      res.status(204).send();
     } catch (err) {
       res.status(400).send(err.errors || err.message);
     }
   },
-  async removeLikeMentoring(_, res) {
+  async removeLikeMentoring(req, res) {
     try {
-        return res.status(204).json();
+      const { id } = req.params;
+      const user_id = req.user.user_id;
+
+      const mentoring = await mentoringRepository.getMentoringById(id);
+      if (!mentoring) return res.status(404).send("Mentoria não encontrada!");
+
+      const student = await userRepository.getStudentById(user_id);
+      if (!student) return res.status(403).send("O usuário logado não é um aluno!");
+
+      const likesData = {
+        mentoring_id: id,
+        student_id: user_id
+      };
+
+      const existingLike = await mentoringRepository.verifyLikeMentoring(likesData);
+      
+      if (!existingLike) {
+          return res.status(400).send("Você ainda não curtiu essa mentoria!");
+      }
+
+      await mentoringRepository.removeLikeMentoring(likesData);
+
+      res.status(204).send();
     } catch (err) {
       res.status(400).send(err.errors || err.message);
     }
   },
+  async countLikesMentoring(req, res) {
+    try {
+      const { id } = req.params;
+
+      const mentoring = await mentoringRepository.getMentoringById(id);
+      if (!mentoring) return res.status(404).send("Mentoria não encontrada!");
+
+      const likes = await mentoringRepository.countLikesMentoring(id);
+      res.status(200).json({ likes: likes});
+    } catch (err) {
+      res.status(400).send(err.errors || err.message)
+    }
+  }
 };

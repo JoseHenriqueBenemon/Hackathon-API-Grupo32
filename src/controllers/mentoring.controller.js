@@ -8,4 +8,5 @@ module.exports = {
   deleteMentoring: mentoringService.deleteMentoring,
   addLikeMentoring: mentoringService.addLikeMentoring,
   removeLikeMentoring: mentoringService.removeLikeMentoring,
+  countLikesMentoring: mentoringService.countLikesMentoring
 };

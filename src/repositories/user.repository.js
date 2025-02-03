@@ -7,38 +7,118 @@ const userRepository = AppDataSource.getRepository(UserAccount);
 const studentRepository = AppDataSource.getRepository(Student);
 const teacherRepository = AppDataSource.getRepository(Teacher);
 
+const teacherSelectColumns = [
+  'teacher.teacher_id AS teacher_teacher_id',
+  'teacher.personal_id AS teacher_personal_id',
+  'teacher.phone AS teacher_phone',
+  'teacher.is_mentored AS teacher_is_mentored',
+  'teacher.bio AS teacher_bio',
+  'user_account.user_id AS user_account_user_id',
+  'user_account.user_type AS user_account_user_type',
+  'user_account.name AS user_account_name',
+  'user_account.email AS user_account_email',
+  'user_account.password AS user_account_password',
+  'mentoring.mentoring_id AS mentoring_mentoring_id',
+  'mentoring.mentoring_date AS mentoring_mentoring_date',
+  'mentoring.modality AS mentoring_modality',
+  'mentoring.matter AS mentoring_matter',
+  'COUNT(likes.mentoring_id) AS mentoring_like_count'
+];
+
+function buildTeacherQuery() {
+  return teacherRepository
+    .createQueryBuilder('teacher')
+    .select(teacherSelectColumns)
+    .leftJoin('teacher.user_account', 'user_account')
+    .leftJoin('teacher.mentoring', 'mentoring')
+    .leftJoin('likes', 'likes', 'likes.mentoring_id = mentoring.mentoring_id');
+}
+
+function formatTeacherData(rawResults) {
+  if (!rawResults || rawResults.length === 0) return null;
+
+  const teacherMap = new Map();
+
+  rawResults.forEach(row => {
+    const teacherId = row.teacher_teacher_id;
+
+    if (!teacherMap.has(teacherId)) {
+      teacherMap.set(teacherId, {
+        teacher_id: teacherId,
+        personal_id: row.teacher_personal_id,
+        phone: row.teacher_phone,
+        is_mentored: row.teacher_is_mentored,
+        bio: row.teacher_bio,
+        user_account: {
+          user_id: row.user_account_user_id,
+          user_type: row.user_account_user_type,
+          name: row.user_account_name,
+          email: row.user_account_email,
+          password: row.user_account_password
+        },
+        mentoring: []
+      });
+    }
+
+    if (row.mentoring_mentoring_id) {
+      teacherMap.get(teacherId).mentoring.push({
+        mentoring_id: row.mentoring_mentoring_id,
+        mentoring_date: row.mentoring_mentoring_date,
+        modality: row.mentoring_modality,
+        matter: row.mentoring_matter,
+        like_count: parseInt(row.mentoring_like_count, 10) || 0
+      });
+    }
+  });
+
+  return [...teacherMap.values()];
+}
+
 module.exports = {
-    async getAllTeachers() {
-      return teacherRepository.find({ relations: ['user_account', 'mentoring'] });
-    },
-    async getAllStudents() {
-      return studentRepository.find({ relations: ['user_account'] });
-    },
-    async getTeacherById(id) {
-      return teacherRepository.findOne({ where: { teacher_id: id }, relations: ['user_account', 'mentoring'] });
-    },
-    async getStudentById(id) {
-      return studentRepository.findOne({ where: { student_id: id }, relations: ['user_account'] });
-    },
-    async getUserByEmail(email) { 
-      return userRepository.findOne({ where: { email } });
-    },
-    async createUser(userData) {
-      return userRepository.save(userData);
-    },
-    async createTeacher(teacherData) {
-      return teacherRepository.save(teacherData);
-    },
-    async createStudent(studentData) {
-      return studentRepository.save(studentData);
-    },
-    async updateUser(id, userData) {
-      return userRepository.update({ user_id: id }, userData);
-    },
-    async updateTeacher(id, teacherData) {
-      return teacherRepository.update({teacher_id: id}, teacherData);
-    },
-    async updateStudent(id, studentData) {
-      return studentRepository.update(id, studentData);
-    },
+  async getAllTeachers() {
+    const rawResults = await buildTeacherQuery()
+      .groupBy('teacher.teacher_id, user_account.user_id, mentoring.mentoring_id')
+      .getRawMany();
+
+    return formatTeacherData(rawResults);
+  },
+  async getTeacherById(id) {
+    const rawResults = await buildTeacherQuery()
+      .where('teacher.teacher_id = :id', { id })
+      .groupBy('teacher.teacher_id, user_account.user_id, mentoring.mentoring_id')
+      .getRawMany();
+
+    return formatTeacherData(rawResults);
+  },
+
+  async getAllStudents() {
+    return studentRepository.find({ relations: ['user_account'] });
+  },
+  async getStudentById(id) {
+    return studentRepository.findOne({
+      where: { student_id: id },
+      relations: ['user_account']
+    });
+  },
+  async getUserByEmail(email) {
+    return userRepository.findOne({ where: { email } });
+  },
+  async createUser(userData) {
+    return userRepository.save(userData);
+  },
+  async createTeacher(teacherData) {
+    return teacherRepository.save(teacherData);
+  },
+  async createStudent(studentData) {
+    return studentRepository.save(studentData);
+  },
+  async updateUser(id, userData) {
+    return userRepository.update({ user_id: id }, userData);
+  },
+  async updateTeacher(id, teacherData) {
+    return teacherRepository.update({ teacher_id: id }, teacherData);
+  },
+  async updateStudent(id, studentData) {
+    return studentRepository.update({ student_id: id }, studentData);
+  },
 };
