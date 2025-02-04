@@ -1,11 +1,12 @@
 const mentoringRepository = require("../repositories/mentoring.repository");
 const userRepository = require("../repositories/user.repository");
-const { mentoringSchema } = require("../validations/mentoring.validation");
+const { mentoringSchema, getMentoringSchema } = require("../validations/mentoring.validation");
 
 module.exports = {
-  async getMentoring(_, res) {
+  async getMentoring(req, res) {
     try {
-      const mentoring = await mentoringRepository.getAllMentoring();
+      const { page, limit } = getMentoringSchema.parse(req.query);
+      const mentoring = await mentoringRepository.getAllMentoring(page, limit);
       res.status(200).json(mentoring);
     } catch (err) {
       res.status(400).send(err.errors || err.message);

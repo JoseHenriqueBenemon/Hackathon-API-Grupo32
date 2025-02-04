@@ -21,34 +21,34 @@ const mentoringSelectColumns = [
     'user_account.name AS user_account_name',
     'user_account.email AS user_account_email',
     'user_account.password AS user_account_password',
-  ];
+];
   
-  function buildMentoringQuery() {
+function buildMentoringQuery() {
     return mentoringRepository
-      .createQueryBuilder('mentoring')
-      .select(mentoringSelectColumns)
-      .leftJoin('mentoring.teacher', 'teacher')
-      .leftJoin('teacher.user_account', 'user_account')
-      .leftJoin('likes', 'likes', 'likes.mentoring_id = mentoring.mentoring_id');
-  }
+        .createQueryBuilder('mentoring')
+        .select(mentoringSelectColumns)
+        .leftJoin('mentoring.teacher', 'teacher')
+        .leftJoin('teacher.user_account', 'user_account')
+        .leftJoin('likes', 'likes', 'likes.mentoring_id = mentoring.mentoring_id');
+}
   
-  function formatMentoringData(rawResults) {
+function formatMentoringData(rawResults) {
     if (!rawResults || rawResults.length === 0) return null;
-  
+
     const mentoringMap = new Map();
 
     rawResults.forEach(row => {
-      const mentoringid = row.mentoring_mentoring_id;
-  
-      if (!mentoringMap.has(mentoringid)) {
+        const mentoringid = row.mentoring_mentoring_id;
+
+        if (!mentoringMap.has(mentoringid)) {
         mentoringMap.set(mentoringid, {
-          mentoring_id: mentoringid,
-          teacher_id: row.mentoring_teacher_id,
-          mentoring_date: row.mentoring_mentoring_date,
-          modality: row.mentoring_modality,
-          matter: row.mentoring_matter,
-          likes: row.mentoring_like_count,
-          teacher: {
+            mentoring_id: mentoringid,
+            teacher_id: row.mentoring_teacher_id,
+            mentoring_date: row.mentoring_mentoring_date,
+            modality: row.mentoring_modality,
+            matter: row.mentoring_matter,
+            likes: row.mentoring_like_count,
+            teacher: {
             teacher_id: row.teacher_teacher_id,
             personal_id: row.teacher_personal_id,
             phone: row.teacher_phone,
@@ -61,20 +61,23 @@ const mentoringSelectColumns = [
                 email: row.user_account_email,
                 password: row.user_account_password
             },
-          },
+            },
         });
-      }
+        }
 
     });
-  
+    
     return [...mentoringMap.values()];
-  }
-  
+}  
 
 module.exports = {
-    async getAllMentoring() {
+    async getAllMentoring(page, limit) {
+        const offset = (page - 1) * limit;
+
         const rawResults = await buildMentoringQuery()
             .groupBy("mentoring.mentoring_id, teacher.teacher_id, user_account.user_id")
+            .limit(limit)
+            .offset(offset)
             .getRawMany();
 
         return formatMentoringData(rawResults);
