@@ -5,7 +5,6 @@ const mentoringSchema = z.object({
     mentoring_date: z.string().datetime({ offset: true }),
     modality: z.string(),
     matter: z.string(),
-
 });
 
 const getMentoringSchema = z.object({

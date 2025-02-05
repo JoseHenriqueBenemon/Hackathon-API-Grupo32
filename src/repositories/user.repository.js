@@ -22,16 +22,32 @@ const teacherSelectColumns = [
   'mentoring.mentoring_date AS mentoring_mentoring_date',
   'mentoring.modality AS mentoring_modality',
   'mentoring.matter AS mentoring_matter',
-  'COUNT(likes.mentoring_id) AS mentoring_like_count'
+  'COUNT(likes.mentoring_id) AS mentoring_like_count',
+  `EXISTS (
+        SELECT 1 FROM likes 
+        WHERE likes.mentoring_id = mentoring.mentoring_id 
+        AND likes.student_id = :user_id
+    ) AS user_has_liked`,
+  'jobs.job_id AS jobs_job_id',
+  'jobs.title AS jobs_job_title',
+  'jobs.company AS jobs_company',
+  'jobs.job_type AS jobs_job_type',
+  'jobs.modality AS jobs_modality',
+  'jobs.publication_date AS jobs_publication_date',
+  'jobs.link AS jobs_link',
+  'jobs.quantity AS jobs_quantity',
+  'jobs.url_image AS jobs_url_image',
 ];
 
-function buildTeacherQuery() {
+function buildTeacherQuery(user_id) {
   return teacherRepository
     .createQueryBuilder('teacher')
     .select(teacherSelectColumns)
     .leftJoin('teacher.user_account', 'user_account')
+    .leftJoin('teacher.jobs', 'jobs')
     .leftJoin('teacher.mentoring', 'mentoring')
-    .leftJoin('likes', 'likes', 'likes.mentoring_id = mentoring.mentoring_id');
+    .leftJoin('likes', 'likes', 'likes.mentoring_id = mentoring.mentoring_id')
+    .setParameter("user_id", user_id || null);
 }
 
 function formatTeacherData(rawResults) {
@@ -56,7 +72,8 @@ function formatTeacherData(rawResults) {
           email: row.user_account_email,
           password: row.user_account_password
         },
-        mentoring: []
+        mentoring: [],
+        jobs: []
       });
     }
 
@@ -66,8 +83,23 @@ function formatTeacherData(rawResults) {
         mentoring_date: row.mentoring_mentoring_date,
         modality: row.mentoring_modality,
         matter: row.mentoring_matter,
-        like_count: parseInt(row.mentoring_like_count, 10) || 0
+        like_count: parseInt(row.mentoring_like_count, 10) || 0,
+        has_liked: row.user_has_liked,
       });
+    }
+
+    if(row.jobs_job_id){
+      teacherMap.get(teacherId).jobs.push({
+        job_id: row.jobs_job_id,
+        title: row.jobs_job_title,
+        company: row.jobs_company,
+        job_type: row.jobs_job_type,
+        modality: row.jobs_modality,
+        publication_date: row.jobs_publication_date,
+        link: row.jobs_link,
+        quantity: row.jobs_quantity,
+        url_image: row.jobs_url_image
+      })
     }
   });
 
@@ -75,17 +107,17 @@ function formatTeacherData(rawResults) {
 }
 
 module.exports = {
-  async getAllTeachers() {
-    const rawResults = await buildTeacherQuery()
-      .groupBy('teacher.teacher_id, user_account.user_id, mentoring.mentoring_id')
+  async getAllTeachers(user_id) {
+    const rawResults = await buildTeacherQuery(user_id)
+      .groupBy('teacher.teacher_id, user_account.user_id, mentoring.mentoring_id, jobs.job_id')
       .getRawMany();
 
     return formatTeacherData(rawResults);
   },
-  async getTeacherById(id) {
-    const rawResults = await buildTeacherQuery()
+  async getTeacherById(id, user_id) {
+    const rawResults = await buildTeacherQuery(user_id)
       .where('teacher.teacher_id = :id', { id })
-      .groupBy('teacher.teacher_id, user_account.user_id, mentoring.mentoring_id')
+      .groupBy('teacher.teacher_id, user_account.user_id, mentoring.mentoring_id, jobs.job_id')
       .getRawMany();
 
     return formatTeacherData(rawResults);

@@ -14,9 +14,11 @@ app.use(cors({
 
 const userRoutes = require('./src/routes/user.routes');
 const mentoringRoutes = require('./src/routes/mentoring.routes');
+const jobRoutes = require('./src/routes/job.routes');
 
 app.use('/user', userRoutes);
 app.use('/mentoring', mentoringRoutes);
+app.use('/job', jobRoutes);
 
 AppDataSource.initialize()
   .then(() => {

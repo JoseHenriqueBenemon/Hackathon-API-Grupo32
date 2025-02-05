@@ -5,17 +5,17 @@ const { teacherSchema, studentSchema } = require('../validations/user.validation
 const { env } = require('../config/env.config');
 
 module.exports = {
-  async getTeachers(_, res) {
+  async getTeachers(req, res) {
     try {
-      const teachers = await userRepository.getAllTeachers();
+      const teachers = await userRepository.getAllTeachers(req.user.user_id);
       res.status(200).json(teachers);
     } catch (err) {
       res.status(500).send(err.message);
     }
   },
-  async getStudents(_, res) {
+  async getStudents(req, res) {
     try {
-      const students = await userRepository.getAllStudents();
+      const students = await userRepository.getAllStudents(req.user.user_id);
       res.status(200).json(students);
     } catch (err) {
       res.status(500).send(err.message);
@@ -45,7 +45,7 @@ module.exports = {
     try {
       const teacherData = teacherSchema.parse(req.body);
 
-      if (teacherData.is_mentored && (!teacherData.bio || teacherData.bio.trim().length < 1)) return res.status(400).send("Se você é mentorado, precisa preencher a bio!"); 
+      if (teacherData.is_mentored === true && (!teacherData.bio || teacherData.bio.trim().length < 1)) return res.status(400).send("Se você é mentorado, precisa preencher a bio!"); 
 
       const hashedPassword = await bcrypt.hash(teacherData.password, 10);
       const user = await userRepository.createUser({

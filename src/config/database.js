@@ -5,6 +5,7 @@ const Student = require('../models/user/student');
 const Teacher = require('../models/user/teacher');
 const Mentoring = require('../models/mentoring/mentoring');
 const Likes = require('../models/likes/likes');
+const Job = require('../models/job/jobs')
 
 const AppDataSource = new DataSource({
   type: 'postgres',
@@ -15,7 +16,7 @@ const AppDataSource = new DataSource({
   database: env.DB_NAME,
   synchronize: true,
   logging: false,
-  entities: [UserAccount, Student, Teacher, Mentoring, Likes],
+  entities: [UserAccount, Student, Teacher, Mentoring, Likes, Job],
 });
 
 module.exports = AppDataSource;

@@ -11,6 +11,11 @@ const mentoringSelectColumns = [
     'mentoring.modality AS mentoring_modality',
     'mentoring.matter AS mentoring_matter',
     'COUNT(likes.mentoring_id) AS mentoring_like_count',
+    `EXISTS (
+        SELECT 1 FROM likes 
+        WHERE likes.mentoring_id = mentoring.mentoring_id 
+        AND likes.student_id = :user_id
+    ) AS user_has_liked`,
     'teacher.teacher_id AS teacher_teacher_id',
     'teacher.personal_id AS teacher_personal_id',
     'teacher.phone AS teacher_phone',
@@ -23,13 +28,14 @@ const mentoringSelectColumns = [
     'user_account.password AS user_account_password',
 ];
   
-function buildMentoringQuery() {
+function buildMentoringQuery(user_id) {
     return mentoringRepository
         .createQueryBuilder('mentoring')
         .select(mentoringSelectColumns)
         .leftJoin('mentoring.teacher', 'teacher')
         .leftJoin('teacher.user_account', 'user_account')
-        .leftJoin('likes', 'likes', 'likes.mentoring_id = mentoring.mentoring_id');
+        .leftJoin('likes', 'likes', 'likes.mentoring_id = mentoring.mentoring_id')
+        .setParameter('user_id', user_id || null);
 }
   
 function formatMentoringData(rawResults) {
@@ -48,6 +54,7 @@ function formatMentoringData(rawResults) {
             modality: row.mentoring_modality,
             matter: row.mentoring_matter,
             likes: row.mentoring_like_count,
+            has_liked: row.user_has_liked,
             teacher: {
             teacher_id: row.teacher_teacher_id,
             personal_id: row.teacher_personal_id,
@@ -71,19 +78,31 @@ function formatMentoringData(rawResults) {
 }  
 
 module.exports = {
-    async getAllMentoring(page, limit) {
+    async getAllMentoring(page, limit, user_id) {
         const offset = (page - 1) * limit;
 
-        const rawResults = await buildMentoringQuery()
+        const totalCount = await mentoringRepository
+            .createQueryBuilder('mentoring')
+            .getCount();
+            
+        const rawResults = await buildMentoringQuery(user_id)
             .groupBy("mentoring.mentoring_id, teacher.teacher_id, user_account.user_id")
             .limit(limit)
             .offset(offset)
             .getRawMany();
 
-        return formatMentoringData(rawResults);
+        return {
+            data: formatMentoringData(rawResults) || [],
+            meta: {
+                page: page,
+                pageIndex: page - 1,
+                perPage: limit,
+                totalCount: totalCount
+            }
+        };
     },
-    async getMentoringById(id) {
-        const rawResults = await buildMentoringQuery()
+    async getMentoringById(id, user_id) {
+        const rawResults = await buildMentoringQuery(user_id)
             .where('mentoring.mentoring_id = :id', { id })
             .groupBy("mentoring.mentoring_id, teacher.teacher_id, user_account.user_id")
             .getRawMany();

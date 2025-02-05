@@ -40,6 +40,11 @@ module.exports = new EntitySchema({
       target: 'Mentoring',
       type: 'one-to-many',
       inverseSide: 'teacher',
-    }
+    },
+    jobs: {
+      target: 'Jobs',
+      type: 'one-to-many', 
+      inverseSide: 'teacher',
+    },
   },
 });
